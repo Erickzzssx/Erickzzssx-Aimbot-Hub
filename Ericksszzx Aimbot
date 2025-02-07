@@ -14,14 +14,13 @@ local Window = Fluent:CreateWindow({
 
 -- Abas
 local Tabs = {
-    Main = Window:AddTab({ Title = "Aimbot" })
+    Main = Window:AddTab({ Title = "Aimbot" }),
     Credits = Window:AddTab({ Title = "Credits" })
 }
 
-- Adicionando conteúdo nas abas
+-- Adicionando conteúdo nas abas
 Tabs.Main:AddParagraph({ Title = "Scripts", Content = "Aimbot abaixo!" })
 Tabs.Credits:AddParagraph({ Title = "TikTok", Content = "Ericksszzx" })
-}
 
 local StarterGui = game:GetService("StarterGui")
 
