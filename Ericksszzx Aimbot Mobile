@@ -44,6 +44,7 @@ local TeleportButton = createButton(MainFrame, "Teleporte", UDim2.new(0, 10, 0, 
 -- Funções do ESP e Aimbot --
 --------------------------------------------------
 
+-- Cria o ESP com a caixa e o texto (para distância e vida)
 local function createESP(player)
     if not espBoxes[player] then
         local box = Drawing.new("Square")
@@ -51,7 +52,15 @@ local function createESP(player)
         box.Color = Color3.fromRGB(255, 0, 0) -- Vermelho
         box.Filled = false
         box.Visible = false
-        espBoxes[player] = box
+
+        local text = Drawing.new("Text")
+        text.Color = Color3.fromRGB(255, 255, 255)
+        text.Size = 16
+        text.Center = true
+        text.Outline = true
+        text.Visible = false
+        
+        espBoxes[player] = {box = box, text = text}
     end
 end
 
@@ -85,7 +94,8 @@ local function getClosestToCrosshair()
 end
 
 local function mobileTouchTargeting()
-    local touchLocation = UserInputService:GetTouchPositions()[1]  -- Pega a primeira posição de toque na tela
+    local touches = UserInputService:GetTouchPositions()
+    local touchLocation = touches[1]  -- Pega a primeira posição de toque na tela
     if touchLocation then
         local target = getClosestToCrosshair()
         if target then
@@ -106,16 +116,28 @@ RunService.RenderStepped:Connect(function()
                 local screenPosition, onScreen = Camera:WorldToViewportPoint(head.Position)
                 if onScreen then
                     local esp = espBoxes[player]
-                    esp.Visible = true
-                    esp.Position = Vector2.new(screenPosition.X - 25, screenPosition.Y - 25)
-                    esp.Size = Vector2.new(50, 50)
+                    esp.box.Visible = true
+                    esp.box.Position = Vector2.new(screenPosition.X - 25, screenPosition.Y - 25)
+                    esp.box.Size = Vector2.new(50, 50)
+                    
+                    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                    if humanoid and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+                        local distance = math.floor((LocalPlayer.Character.Head.Position - head.Position).Magnitude)
+                        local health = math.floor(humanoid.Health)
+                        esp.text.Visible = true
+                        esp.text.Position = Vector2.new(screenPosition.X, screenPosition.Y - 35)
+                        esp.text.Text = string.format("Dist: %d | Vida: %d", distance, health)
+                    end
                 else
-                    espBoxes[player].Visible = false
+                    local esp = espBoxes[player]
+                    esp.box.Visible = false
+                    esp.text.Visible = false
                 end
             end
         else
             if espBoxes[player] then
-                espBoxes[player].Visible = false
+                espBoxes[player].box.Visible = false
+                espBoxes[player].text.Visible = false
             end
         end
     end
@@ -128,7 +150,7 @@ RunService.RenderStepped:Connect(function()
                 Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
             end
         elseif UserInputService.TouchEnabled then
-            -- Para mobile, seguir a posição do toque na tela
+            -- Para mobile, segue a posição do toque na tela
             mobileTouchTargeting()
         end
     end
@@ -164,3 +186,4 @@ end)
 --------------------------------------------------
 -- Código para Teleport (sem alterações) --
 --------------------------------------------------
+-- Insira aqui o código do Teleport, se necessário.
