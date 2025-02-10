@@ -1,0 +1,166 @@
+-- Serviços e variáveis iniciais
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local espEnabled = false
+local aimbotEnabled = false
+local aiming = false -- Variável para verificar se o botão de toque ou mouse está pressionado
+local espBoxes = {}
+
+--------------------------------------------------
+-- Criação da GUI Principal (ESP, Aimbot e Teleporte) --
+--------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 220, 0, 300)
+MainFrame.Position = UDim2.new(0, 20, 0, 100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 2
+MainFrame.BackgroundTransparency = 0.2
+
+local function createButton(parent, text, position)
+    local button = Instance.new("TextButton", parent)
+    button.Size = UDim2.new(0, 200, 0, 50)
+    button.Position = position
+    button.Text = text
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.SourceSansBold
+    button.TextSize = 18
+    button.BorderSizePixel = 2
+    return button
+end
+
+local EspButton = createButton(MainFrame, "Ativar ESP", UDim2.new(0, 10, 0, 10))
+local AimbotButton = createButton(MainFrame, "Ativar Aimbot", UDim2.new(0, 10, 0, 70))
+local TeleportButton = createButton(MainFrame, "Teleporte", UDim2.new(0, 10, 0, 130))
+
+--------------------------------------------------
+-- Funções do ESP e Aimbot --
+--------------------------------------------------
+
+local function createESP(player)
+    if not espBoxes[player] then
+        local box = Drawing.new("Square")
+        box.Thickness = 2
+        box.Color = Color3.fromRGB(255, 0, 0) -- Vermelho
+        box.Filled = false
+        box.Visible = false
+        espBoxes[player] = box
+    end
+end
+
+local function isSameTeam(player)
+    return LocalPlayer.Team == player.Team
+end
+
+local function getClosestToCrosshair()
+    local closestEnemy = nil
+    local shortestAngle = math.huge  -- Um número muito grande
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and not isSameTeam(player) then
+            local head = player.Character:FindFirstChild("Head")
+                        or player.Character:FindFirstChild("UpperTorso")
+                        or player.Character:FindFirstChild("HumanoidRootPart")
+            if head then
+                local screenPosition, onScreen = Camera:WorldToViewportPoint(head.Position)
+                if onScreen then
+                    local mouseLocation = UserInputService:GetMouseLocation()
+                    local distanceFromCrosshair = (Vector2.new(screenPosition.X, screenPosition.Y) - mouseLocation).Magnitude
+                    if distanceFromCrosshair < shortestAngle then
+                        shortestAngle = distanceFromCrosshair
+                        closestEnemy = head
+                    end
+                end
+            end
+        end
+    end
+    return closestEnemy
+end
+
+local function mobileTouchTargeting()
+    local touchLocation = UserInputService:GetTouchPositions()[1]  -- Pega a primeira posição de toque na tela
+    if touchLocation then
+        local target = getClosestToCrosshair()
+        if target then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    -- Processa a parte do ESP
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and espEnabled and not isSameTeam(player) then
+            createESP(player)
+            local head = player.Character:FindFirstChild("Head")
+                        or player.Character:FindFirstChild("UpperTorso")
+                        or player.Character:FindFirstChild("HumanoidRootPart")
+            if head then
+                local screenPosition, onScreen = Camera:WorldToViewportPoint(head.Position)
+                if onScreen then
+                    local esp = espBoxes[player]
+                    esp.Visible = true
+                    esp.Position = Vector2.new(screenPosition.X - 25, screenPosition.Y - 25)
+                    esp.Size = Vector2.new(50, 50)
+                else
+                    espBoxes[player].Visible = false
+                end
+            end
+        else
+            if espBoxes[player] then
+                espBoxes[player].Visible = false
+            end
+        end
+    end
+
+    -- Aimbot
+    if aimbotEnabled then
+        if aiming then
+            local target = getClosestToCrosshair()
+            if target then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+            end
+        elseif UserInputService.TouchEnabled then
+            -- Para mobile, seguir a posição do toque na tela
+            mobileTouchTargeting()
+        end
+    end
+end)
+
+-- Detecta cliques ou toques para ativar o aimbot
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.Touch then
+        aiming = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.Touch then
+        aiming = false
+    end
+end)
+
+--------------------------------------------------
+-- Atualiza o estado dos botões (ESP, Aimbot) --
+--------------------------------------------------
+
+EspButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspButton.Text = espEnabled and "Desativar ESP" or "Ativar ESP"
+end)
+
+AimbotButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    AimbotButton.Text = aimbotEnabled and "Desativar Aimbot" or "Ativar Aimbot"
+end)
+
+--------------------------------------------------
+-- Código para Teleport (sem alterações) --
+--------------------------------------------------
