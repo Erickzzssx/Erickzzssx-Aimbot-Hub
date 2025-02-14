@@ -18,7 +18,7 @@ ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 220, 0, 300)
-MainFrame.Position = UDim2.new(0, 20, 0, 100)
+MainFrame.Position = UDim2.new(0, 5, 0, 100) -- Ajustado para mais à esquerda
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 2
 MainFrame.BackgroundTransparency = 0.2
